@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text to Speech Converter</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+
+        h2 {
+            color: #444;
+        }
+
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        label {
+            margin-top: 10px;
+            display: block;
+            color: #666;
+        }
+
+        textarea, select, input[type="submit"] {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            box-sizing: border-box; /* Added to include padding in element's total width and height */
+        }
+
+        input[type="submit"] {
+            background-color: #5cb85c;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #4cae4c;
+        }
+
+        audio {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>Text to Speech Conversion</h2>
+    <form id="ttsForm">
+        <label for="textInput">Enter Text:</label><br>
+        <textarea id="textInput" name="textInput" rows="4" cols="50"></textarea><br><br>
+        <label for="languageSelect">Language:</label><br>
+        <select id="languageSelect" name="language">
+            <option value="en-US">English - United States</option>
+            <option value="zh-CN">Chinese - Mainland</option>
+            <!-- Add more languages as needed -->
+        </select><br><br>
+        <label for="voiceSelect">Voice:</label><br>
+        <select id="voiceSelect" name="voiceName">
+            <option value="en-US-AriaNeural">Aria Neural - English (US)</option>
+            <option value="en-US-JennyNeural">Jenny Neural - English (US)</option>
+            <option value="en-US-GuyNeural">Guy Neural - English (US)</option>
+            <option value="en-GB-LibbyNeural">Libby Neural - English (UK)</option>
+            <option value="en-AU-NatashaNeural">Natasha Neural - English (Australia)</option>
+            <option value="zh-CN-XiaoxiaoNeural">Xiaoxiao Neural - Chinese (Mandarin, Simplified)</option>
+            <option value="zh-CN-YunyangNeural">Yunyang Neural - Chinese (Mandarin, Simplified)</option>
+            <option value="zh-CN-YunxiNeural">Yunxi Neural - Chinese (Mandarin, Simplified)</option>
+            <option value="zh-TW-HsiaoChenNeural">HsiaoChen Neural - Chinese (Mandarin, Traditional)</option>
+            <option value="zh-HK-HiuMaanNeural">HiuMaan Neural - Chinese (Hong Kong)</option>
+            <!-- Add more voices as needed -->
+        </select><br><br>
+
+        <input type="submit" value="Convert to Speech">
+    </form>
+
+    <br>
+    <audio id="audioResult" controls style="display:none;"></audio>
+
+    <script>
+        $(document).ready(function () {
+            $("#ttsForm").submit(function (event) {
+                event.preventDefault(); // Prevent the default form submission
+                var formData = {
+                    text: $("#textInput").val(),
+                    language: $("#languageSelect").val(),
+                    voiceName: $("#voiceSelect").val(),
+                    style: $("#styleSelect").val() // Include the selected style
+                };
+
+
+                $.ajax({
+                type: "POST",
+                url: "http://127.0.0.1:5000/synthesize",
+                data: JSON.stringify(formData),
+                contentType: "application/json",
+                success: function (response) {
+                    playAudioSegmentsSequentially(response.audioSegments);
+                },
+                error: function (xhr, status, error) {
+                    console.error("Error: " + error);
+                }
+            });
+        });
+    });
+
+    function playAudioSegmentsSequentially(audioSegments) {
+        let index = 0;
+
+        function playNextSegment() {
+            if (index < audioSegments.length) {
+                var audioElement = new Audio(`data:audio/wav;base64,${audioSegments[index++]}`);
+                audioElement.onended = playNextSegment;
+                audioElement.play();
+            }
+        }
+
+        playNextSegment();
+    }
+</script>
+
